@@ -7,8 +7,6 @@ module;
 #pragma comment(lib, "Ws2_32.lib")
 #pragma warning(disable : 4996)
 
-
-
 export module SocketWrapper;
 
 export class SocketWrapper {
