@@ -3,7 +3,6 @@ module;
 #include <WinSock2.h>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma warning(disable : 4996)
