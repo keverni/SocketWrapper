@@ -4,7 +4,7 @@ SocketWrapper - Educational and just-for-fun project on С++
 This is project for comfortable working with Windows sockets. 
 To use it in your project add the module "SocketWrapper" and import it.
 
-#Server example
+# Server example
 ```cpp
 #include <iostream>
 
@@ -24,7 +24,7 @@ int main() noexcept
 }
 ```
 
-#Client example
+# Client example
 ```cpp
 #include <iostream>
 
