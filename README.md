@@ -36,7 +36,7 @@ int main() noexcept
 {
 	SocketWrapper client_socket;
 
-	client_socket.connect();
+	client_socket.connect("127.0.0.1", 27015);
 
         auto size{ client_socket.receiveSize() };
 	std::cout << client_socket.receiveMsg(size) << std::endl;
