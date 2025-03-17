@@ -13,12 +13,14 @@ import SocketWrapper;
 int main() noexcept
 {
 	SocketWrapper server_sock;
-	server_sock.create();
-	server_sock.bind();
+	server_sock.bind(27015);
 	server_sock.listen();
 
 	auto client_socket{ server_sock.accept() };
-	server_sock.send(client_socket, "Hello world!");
+
+        std::string msg{ "Hello world!" };
+        server_sock.sendSize(client_socket, msg.size());
+        server_sock.sendMsg(client_socket, msg);
 
 	return 0;
 }
@@ -34,9 +36,10 @@ int main() noexcept
 {
 	SocketWrapper client_socket;
 
-	client_socket.create();
 	client_socket.connect();
-	std::cout << client_socket.receive() << std::endl;
+
+        auto size{ client_socket.receiveSize() };
+	std::cout << client_socket.receiveMsg(size) << std::endl;
 
 	return 0;
 }
