@@ -67,12 +67,12 @@ public:
         return clientSock;
     }
 
-    void connect(int port) 
+    void connect(std::string_view address, int port) 
     {
         sockaddr_in addr = {};
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
-        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+        addr.sin_addr.s_addr = inet_addr(address.data());
 
         if (::connect(m_Sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR) 
         {
