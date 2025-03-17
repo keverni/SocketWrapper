@@ -3,12 +3,9 @@ module;
 #include <WinSock2.h>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #pragma comment(lib, "Ws2_32.lib")
 #pragma warning(disable : 4996)
-
-
 
 export module SocketWrapper;
 
@@ -19,10 +16,17 @@ public:
         m_Sock{ INVALID_SOCKET }
     {
         WSADATA wsaData;
-        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) 
+        WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+        m_Sock = socket(AF_INET, SOCK_STREAM, 0);
+        if (m_Sock == INVALID_SOCKET) 
         {
-            throw std::runtime_error("WSAStartup failed");
+            throw std::runtime_error("Socket creation failed");
         }
+    }
+    explicit SocketWrapper(SOCKET other) :
+        m_Sock(other)
+    {
     }
     ~SocketWrapper() 
     {
@@ -30,21 +34,12 @@ public:
         WSACleanup();
     }
 
-    void create(int af = AF_INET, int type = SOCK_STREAM, int protocol = 0) 
-    {
-        m_Sock = socket(af, type, protocol);
-        if (m_Sock == INVALID_SOCKET) 
-        {
-            throw std::runtime_error("Socket creation failed");
-        }
-    }
-
-    void bind(std::string_view ip = "127.0.0.1", int port = 27015)
+    void bind(int port)
     {
         sockaddr_in addr = {};
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
-        addr.sin_addr.s_addr = inet_addr(ip.data()); //inet_addr("192.168.213.128");
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
         if (::bind(m_Sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR) 
         {
@@ -60,24 +55,24 @@ public:
         }
     }
 
-    SOCKET accept() 
+    SocketWrapper accept() 
     {
         sockaddr_in clientAddress{};
         int clientAddressSize{ sizeof(clientAddress) };
-        SOCKET clientSock{ ::accept(m_Sock, reinterpret_cast<sockaddr*>(&clientAddress), &clientAddressSize) };
-        if (clientSock == INVALID_SOCKET) 
+        SocketWrapper clientSock{ ::accept(m_Sock, reinterpret_cast<sockaddr*>(&clientAddress), &clientAddressSize) };
+        if (clientSock.m_Sock == INVALID_SOCKET) 
         {
             throw std::runtime_error("Accept failed");
         }
         return clientSock;
     }
 
-    void connect(std::string_view ip = "127.0.0.1", int port = 27015) 
+    void connect(int port) 
     {
         sockaddr_in addr = {};
         addr.sin_family = AF_INET;
         addr.sin_port = htons(port);
-        addr.sin_addr.s_addr = inet_addr(ip.data());
+        addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
         if (::connect(m_Sock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == SOCKET_ERROR) 
         {
@@ -85,32 +80,38 @@ public:
         }
     }
 
-    void send(SOCKET socket, std::string_view data) 
+    void sendSize(const SocketWrapper& socket, int size) 
     {
-        auto size{ data.size() };
-        
-        ::send(socket, reinterpret_cast<char*>(&size), sizeof(int), 0);
-
-        ::send(socket, data.data(), static_cast<int>(data.size()), 0);
+        ::send(socket.m_Sock, reinterpret_cast<char*>(&size), sizeof(int), 0);
     }
 
-    std::string receive() 
+    void sendMsg(const SocketWrapper& socket, std::string_view data) 
+    {
+        ::send(socket.m_Sock, data.data(), static_cast<int>(data.size()), 0);
+    }
+
+    int receiveSize() 
     {
         auto buf_size{ 0 };
-        std::string buf;
 
-        if (recv(m_Sock, reinterpret_cast<char*>(&buf_size), sizeof(int), 0) < 0)
+        if (recv(m_Sock, reinterpret_cast<char*>(&buf_size), sizeof(buf_size), 0) < 0)
         {
             throw std::runtime_error("Error to receive size");
         }
-  
-        buf.reserve(buf_size);
+
+        return buf_size;
+    }
+
+    std::string receiveMsg(int buf_size = 4096) 
+    {
+        std::string buf(buf_size, '\0');
 
         if (recv(m_Sock, buf.data(), buf_size, 0) < 0)
         {
             throw std::runtime_error("Error to receive message");
         }
-        return buf.data();
+
+        return buf;
     }
 
     void close() 
